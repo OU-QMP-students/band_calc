@@ -10,9 +10,10 @@ class FindData:
     def __init__(self, filepath:str) -> None:
         # initial and shared values
         self.filepath:str = filepath
-        self.energys = None
+        self.table_energy = None
         self.col = None
 
+        # Confirm existence of file
         assert os.path.isfile(self.filepath), f"No such file or directori {self.filepath}"
 
 
@@ -21,11 +22,11 @@ class FindData:
         self.find_energys()
         fig = plt.figure(figsize=(6, 10), dpi=100)
 
-        # plot
-        for i, key in enumerate(self.energys.keys()):
+        # plot for each energy
+        for i, key in enumerate(self.table_energy.keys()):
             ax = fig.add_subplot(len(self.col), 1, i+1)
-            ax.plot(self.energys[key], '--', label=key)
-            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, loc:int(x)))
+            ax.plot(self.table_energy[key], '--', label=key)
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, loc:f"{x:.2f}"))
             plt.legend()
 
         plt.xlabel('number of iterat')
@@ -35,22 +36,27 @@ class FindData:
         # open file from the given Path(self.filepath)
         with open(self.filepath, 'r', encoding='utf8') as f:
             data = f.read()
+
+        # data: split all sentences by line -> list[str, str, ...],  
+        # energy:energy for each iterator -> list
         datas = data.split('\n')
         energy = []
 
         # find the energy data from fplo.out; trigger is "EE:"
         for i, l in enumerate(datas):
             if "EE" in l: 
-                self.col = re.split(r'  +', datas[i-1])
-                egs = re.split(r'  +', l)
+                self.col = re.split(r' {2,}', datas[i-1])
+                egs = re.split(r' {2,}', l)
                 energy.append(egs)
             else:
                 pass
         
         # transform to DataFrame and drop the unnecessary columns
-        energys = pd.DataFrame(energy, columns=self.col, index=None, )
-        energys = energys.drop(columns='')
-        self.energys = energys.astype(float)
+        table_energy = pd.DataFrame(energy, columns=self.col)
+        table_energy = table_energy[table_energy != r'EE:'].dropna(axis=1)
 
-        return energys
+        # transform str -> float
+        self.table_energy = table_energy.astype(float)
+
+        return table_energy
 
