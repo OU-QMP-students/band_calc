@@ -1,23 +1,34 @@
 import re
 import os
+import pathlib
+from pathlib import Path
+from glob import glob
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 class FindData:
+    """_summary_
+    this is a module for plotting energy data and checking its convergence. 
+    The data is obtained from a standard output file.
+    The only variable needed is the filepath of the standard output where the data is written.
+    """
+
     def __init__(self, filepath:str) -> None:
         # initial and shared values
+        # filepath: path of a standard output file.
         self.filepath:str = filepath
         self.table_energy = None
         self.col = None
 
-        # Confirm existence of file
+        # Cobandnfirm existence of file
         assert os.path.isfile(self.filepath), f"No such file or directori {self.filepath}"
 
 
-    def energy_plot(self) -> None:
+    def energy_plot(
+        self, save_on:pathlib.PosixPath=None
+        ) -> None:
         # get table which are discribed several energy from fplo.out
         self.find_energys()
         fig = plt.figure(figsize=(6, 10), dpi=100)
@@ -30,6 +41,10 @@ class FindData:
             plt.legend()
 
         plt.xlabel('number of iterat')
+
+        # save figure
+        plt.savefig(str(save_on / "energys.png"))
+        plt.close()
 
 
     def find_energys(self) -> pd.DataFrame: 
@@ -59,4 +74,13 @@ class FindData:
         self.table_energy = table_energy.astype(float)
 
         return table_energy
+
+if __name__ == '__main__':
+
+    # get curent directory
+    dirpath = Path(os.getcwd())
+    found_path = glob(str(dirpath / "fplo.out"))
+
+    # plot and save figures
+    FindData(found_path[0]).energy_plot(save_on=dirpath)
 
